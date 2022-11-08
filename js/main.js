@@ -9,3 +9,4 @@ $(document).on('pagecreate', '#settings', function() {
     var keysController = new gauth.KeysController();
     keysController.init();
 });
+ 
