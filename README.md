@@ -8,5 +8,5 @@ UPDATES
 
 ### Known Issues
 - On Import Keys button file dialog (and encryption password too) sometimes get opened twice
-- Encrypted files and Export Keys do not work on Safari(browser dialogs compatibility)
+- [temporary(browser dialogs compatibility)] Encrypted files and Export Keys do not work on Safari
 
