@@ -178,6 +178,7 @@ var decrypted_data = null;
                     addAccount(name, secret);
                     clearAddFields();
                     $.mobile.navigate('#main');
+                    location.reload()
                 } else {
                     $('#keySecret').focus();
                 }
@@ -286,6 +287,9 @@ var decrypted_data = null;
                 }).every(element => element === true);
             }
             file.click();
+            file.addEventListener("click", function(evt) {
+                evt.stopPropagation();
+              }, false);
             file.addEventListener('change', (event) => {
                 // Stop the form from reloading the page
                 event.preventDefault();
@@ -303,6 +307,7 @@ var decrypted_data = null;
                             if(password == "" || password == null){
                                 location.reload();
                             }else{
+                                try {
                                 var decrypted = CryptoJS.AES.decrypt(json.data, password);
                                 var data_ = JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
                                 var data__ = JSON.parse(data_)
@@ -311,6 +316,10 @@ var decrypted_data = null;
                                 $("#import_keys_").val("")
                                 $.mobile.navigate('#main');
                                 location.reload()
+                            } catch(error){
+                                alert("Wrong Password or File")
+                                location.reload()
+                            }
                                 
                             }
                         }else{
@@ -339,6 +348,7 @@ var decrypted_data = null;
             storageService.setObject('accounts', []);
             updateKeys();
             $.mobile.navigate('#main');
+            location.reload()
         }
         var deleteAccount = function (index) {
             // Remove object by index
