@@ -14,21 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(function(exports) {
+(function (exports) {
     "use strict";
-
-    var StorageService = function() {
-        var setObject = function(key, value) {
+    var hasJsonStructure = (str) => {
+        if (typeof str !== 'string') return false;
+        try {
+            const result = JSON.parse(str);
+            const type = Object.prototype.toString.call(result);
+            return type === '[object Object]' 
+                || type === '[object Array]';
+        } catch (err) {
+            return false;
+        }
+    }
+    var StorageService = function () {
+        var setObject = function (key, value) {
             localStorage.setItem(key, JSON.stringify(value));
         };
 
-        var getObject = function(key) {
+        var getObject = function (key) {
             var value = localStorage.getItem(key);
             // if(value) return parsed JSON else undefined
             return value && JSON.parse(value);
         };
 
-        var isSupported = function() {
+        var isSupported = function () {
             return typeof (Storage) !== "undefined";
         };
 
@@ -45,17 +55,17 @@
     // Originally based on the JavaScript implementation as provided by Russell Sayers on his Tin Isles blog:
     // http://blog.tinisles.com/2011/10/google-authenticator-one-time-password-algorithm-in-javascript/
 
-    var KeyUtilities = function(jsSHA) {
+    var KeyUtilities = function (jsSHA) {
 
-        var dec2hex = function(s) {
+        var dec2hex = function (s) {
             return (s < 15.5 ? '0' : '') + Math.round(s).toString(16);
         };
 
-        var hex2dec = function(s) {
+        var hex2dec = function (s) {
             return parseInt(s, 16);
         };
 
-        var base32tohex = function(base32) {
+        var base32tohex = function (base32) {
             var base32chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
             var bits = "";
             var hex = "";
@@ -73,14 +83,14 @@
             return hex;
         };
 
-        var leftpad = function(str, len, pad) {
+        var leftpad = function (str, len, pad) {
             if (len + 1 >= str.length) {
                 str = new Array(len + 1 - str.length).join(pad) + str;
             }
             return str;
         };
 
-        var generate = function(secret, epoch) {
+        var generate = function (secret, epoch) {
             var key = base32tohex(secret);
 
             // HMAC generator requires secret key to have even number of nibbles
@@ -89,7 +99,7 @@
             }
 
             // If no time is given, set time as now
-            if(typeof epoch === 'undefined') {
+            if (typeof epoch === 'undefined') {
                 epoch = Math.round(new Date().getTime() / 1000.0);
             }
             var time = leftpad(dec2hex(Math.floor(epoch / 30)), 16, '0');
@@ -116,12 +126,12 @@
     exports.KeyUtilities = KeyUtilities;
 
     // ----------------------------------------------------------------------------
-    var KeysController = function() {
+    var KeysController = function () {
         var storageService = null,
             keyUtilities = null,
             editingEnabled = false;
 
-        var init = function() {
+        var init = function () {
             storageService = new StorageService();
             keyUtilities = new KeyUtilities(jsSHA);
 
@@ -142,34 +152,36 @@
             }
 
             // Bind to keypress event for the input
-            $('#addKeyButton').click(function() {
+            $('#addKeyButton').click(function () {
                 var name = $('#keyAccount').val();
                 var secret = $('#keySecret').val();
                 // remove spaces from secret
                 secret = secret.replace(/ /g, '');
-                if(secret !== '') {
+                if (secret !== '') {
                     addAccount(name, secret);
                     clearAddFields();
                     $.mobile.navigate('#main');
                 } else {
                     $('#keySecret').focus();
-		}
+                }
             });
 
-            $('#addKeyCancel').click(function() {
+            $('#addKeyCancel').click(function () {
                 clearAddFields();
             });
 
-            var clearAddFields = function() {
+            var clearAddFields = function () {
                 $('#keyAccount').val('');
-		        $('#keySecret').val('');
+                $('#keySecret').val('');
             };
 
-            $('#edit').click(function() { toggleEdit(); });
-            $('#export').click(function() { exportAccounts(); });
+            $('#edit').click(function () { toggleEdit(); });
+            $('#export').click(function () { exportAccounts(); });
+            $('#import').click(function () { importAccounts(); });
+            $('#cleanupButton').click(()=> cleanupAccounts())
         };
 
-        var updateKeys = function() {
+        var updateKeys = function () {
             var accountList = $('#accounts');
             // Remove all except the first line
             accountList.find("li:gt(0)").remove();
@@ -178,52 +190,107 @@
                 var key = keyUtilities.generate(account.secret);
 
                 // Construct HTML
-                var accName = $('<p>').text(account.name).html();  // print as-is
+                var account_name_elem = '<span>'+account.name+'</span>'
+                if(editingEnabled) account_name_elem = '<input type="text" class="account_name_input" id="account_name_'+index+'" value="'+account.name+'" placeholder="Key Name">'
+                var accName = $('<p>').html(account_name_elem).html();  // print as-is
                 var detLink = $('<span class="secret"><h3>' + key + '</h3>' + accName + '</span>');
                 var accElem = $('<li data-icon="false">').append(detLink);
- 
-                if(editingEnabled) {
+                if (editingEnabled) {
                     var delLink = $('<p class="ui-li-aside"><a class="ui-btn-icon-notext ui-icon-delete" href="#"></a></p>');
                     delLink.click(function () {
                         deleteAccount(index);
                     });
                     accElem.append(delLink);
                 }
-
                 // Add HTML element
                 accountList.append(accElem);
             });
             accountList.listview().listview('refresh');
         };
-
-        var toggleEdit = function() {
+        var saveAccounts = () => {
+            let accounts = storageService.getObject('accounts');
+            $(".account_name_input").each((i,elem)=>{
+                accounts[i].name = $(elem).val()
+            })
+            storageService.setObject('accounts', accounts);
+            updateKeys();
+        }
+        var toggleEdit = function () {
             editingEnabled = !editingEnabled;
-            if(editingEnabled) {
+            if (editingEnabled) {
+                $('#edit').text('Save')
                 $('#addButton').show();
             } else {
+                saveAccounts();
+                $('#edit').text('Edit')
                 $('#addButton').hide();
             }
             updateKeys();
         };
 
-        var exportAccounts = function() {
+        var exportAccounts = function () {
             var accounts = JSON.stringify(storageService.getObject('accounts'));
-            var blob = new Blob([accounts], {type: 'text/plain;charset=utf-8'});
+            var blob = new Blob([accounts], { type: 'text/plain;charset=utf-8' });
 
             saveAs(blob, 'gauth-export.json');
         };
 
-        var deleteAccount = function(index) {
+        var importAccounts = () => {
+            console.log("..")
+            const file = document.getElementById("import_keys_")
+            const validate = (data) => {
+                if (!Array.isArray(data)) return false;
+                if (data.length < 1) return false;
+                return data.map((entry) => {
+                    return (entry.hasOwnProperty('name') && entry.hasOwnProperty('secret'))
+                }).every(element => element === true);
+            }
+            file.click();
+            file.addEventListener('change', (event) => {
+                // Stop the form from reloading the page
+                event.preventDefault();
+                // If there's no file, do nothing
+                if (!file.value.length) return;
+                // Create a new FileReader() object
+                let reader = new FileReader();
+                // Setup the callback event to run when the file is read
+                reader.onload = (event) => {
+                        let str = event.target.result;
+                        if(hasJsonStructure(str)){
+                        let json = JSON.parse(str);
+                        if (validate(json)) {
+                            storageService.setObject('accounts', json);
+                            updateKeys();
+                            $("#import_keys_").val("")
+                            $.mobile.navigate('#main');
+                        } else {
+                            alert("Not gauth compatible FileStructure")
+                        }
+                    }else{
+                        alert("Not gauth compatible FileType")
+                    }
+                }
+                // Read the file
+                reader.readAsText(file.files[0]);
+                reader.close();
+
+            }, false);
+        }
+        var cleanupAccounts = () => {
+            storageService.setObject('accounts', []);
+            updateKeys();
+            $.mobile.navigate('#main');
+        }
+        var deleteAccount = function (index) {
             // Remove object by index
             var accounts = storageService.getObject('accounts');
             accounts.splice(index, 1);
             storageService.setObject('accounts', accounts);
-
             updateKeys();
         };
 
-        var addAccount = function(name, secret) {
-            if(secret === '') {
+        var addAccount = function (name, secret) {
+            if (secret === '') {
                 // Bailout
                 return false;
             }
@@ -249,7 +316,7 @@
             return true;
         };
 
-        var timerTick = function() {
+        var timerTick = function () {
             var epoch = Math.round(new Date().getTime() / 1000.0);
             var countDown = 30 - (epoch % 30);
             if (epoch % 30 === 0) {
@@ -267,4 +334,4 @@
 
     exports.KeysController = KeysController;
 
-})(typeof exports === 'undefined' ? this['gauth']={} : exports);
+})(typeof exports === 'undefined' ? this['gauth'] = {} : exports);
