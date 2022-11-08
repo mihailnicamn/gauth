@@ -14,6 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+var key_object = null;
+var promise_key = null;
+var encrypted_data = null;
+var encrypt_promise = null;
+var vector = window.crypto.getRandomValues(new Uint8Array(16));
+var decrypt_promise = null;
+var decrypted_data = null;
+
 (function (exports) {
     "use strict";
     var hasJsonStructure = (str) => {
@@ -50,6 +59,14 @@
         };
     };
 
+    function convertStringToArrayBuffer(str) {
+        var encoder = new TextEncoder("utf-8");
+        return encoder.encode(str);
+    }
+    function convertArrayBuffertoString(buffer) {
+        var decoder = new TextDecoder("utf-8");
+        return decoder.decode(buffer);
+    }
     exports.StorageService = StorageService;
 
     // Originally based on the JavaScript implementation as provided by Russell Sayers on his Tin Isles blog:
@@ -227,12 +244,35 @@
             }
             updateKeys();
         };
-
         var exportAccounts = function () {
             var accounts = JSON.stringify(storageService.getObject('accounts'));
-            var blob = new Blob([accounts], { type: 'text/plain;charset=utf-8' });
+            if (confirm("Use Encryption? \n 'OK' encrypted file \n 'Cancel' plain file")) {
+            let password = prompt("Enter password to encrypt:", "");
+            if(password == "" || password == null){
+                location.reload();
+            }else{
+                var data_string = JSON.stringify(accounts)
+                var encrypted = CryptoJS.AES.encrypt(data_string,password)
+                alert(encrypted)
+            let tosavedata = {
+                "encrypted" : true,
+                "data" : encrypted.toString()
+            }
+            var blob = new Blob([JSON.stringify(tosavedata)], { type: 'text/plain;charset=utf-8' });
+            saveAs(blob, 'gauth-encrypted-data.json');
+            location.reload()
+            
+        }
+            } else {
 
-            saveAs(blob, 'gauth-export.json');
+                let tosavedata = JSON.stringify({
+                    encrypted : false,
+                    data : accounts
+                })
+            var blob = new Blob([tosavedata], { type: 'text/plain;charset=utf-8' });
+            saveAs(blob, 'gauth-data.json');
+            location.reload()
+            }
         };
 
         var importAccounts = () => {
@@ -258,21 +298,40 @@
                         let str = event.target.result;
                         if(hasJsonStructure(str)){
                         let json = JSON.parse(str);
+                        if(json.encrypted){
+                            let password = prompt("Enter password to decrypt:", "");
+                            if(password == "" || password == null){
+                                location.reload();
+                            }else{
+                                var decrypted = CryptoJS.AES.decrypt(json.data, password);
+                                var data_ = JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
+                                var data__ = JSON.parse(data_)
+                                storageService.setObject('accounts', data__);
+                                updateKeys();
+                                $("#import_keys_").val("")
+                                $.mobile.navigate('#main');
+                                location.reload()
+                                
+                            }
+                        }else{
                         if (validate(json)) {
                             storageService.setObject('accounts', json);
                             updateKeys();
                             $("#import_keys_").val("")
                             $.mobile.navigate('#main');
+                            location.reload()
                         } else {
                             alert("Not gauth compatible FileStructure")
+                            location.reload()
                         }
+                    }
                     }else{
                         alert("Not gauth compatible FileType")
+                        location.reload()
                     }
                 }
                 // Read the file
                 reader.readAsText(file.files[0]);
-                reader.close();
 
             }, false);
         }
