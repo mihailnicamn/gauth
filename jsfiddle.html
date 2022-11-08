@@ -66,7 +66,7 @@ function encrypt_data() {
 }
 
 function decrypt_data() {
-		let data = new Uint8Array(JSON.parse(storage).data);
+	let data = new Uint8Array(JSON.parse(storage).data);
     decrypt_promise = window.crypto.subtle.decrypt({name: "AES-GCM", iv: vector}, key_object, data.buffer);
 
     decrypt_promise.then(

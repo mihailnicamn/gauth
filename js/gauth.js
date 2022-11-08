@@ -15,14 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-var key_object = null;
-var promise_key = null;
-var encrypted_data = null;
-var encrypt_promise = null;
-var vector = window.crypto.getRandomValues(new Uint8Array(16));
-var decrypt_promise = null;
-var decrypted_data = null;
-
 (function (exports) {
     "use strict";
     var hasJsonStructure = (str) => {
