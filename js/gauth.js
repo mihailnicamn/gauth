@@ -17,12 +17,14 @@
 
 (function (exports) {
     "use strict";
+    window.save_encrypted = false;
+    window.load_keys_encrypted = false;
     var hasJsonStructure = (str) => {
         if (typeof str !== 'string') return false;
         try {
             const result = JSON.parse(str);
             const type = Object.prototype.toString.call(result);
-            return type === '[object Object]' 
+            return type === '[object Object]'
                 || type === '[object Array]';
         } catch (err) {
             return false;
@@ -50,15 +52,6 @@
             setObject: setObject
         };
     };
-
-    function convertStringToArrayBuffer(str) {
-        var encoder = new TextEncoder("utf-8");
-        return encoder.encode(str);
-    }
-    function convertArrayBuffertoString(buffer) {
-        var decoder = new TextDecoder("utf-8");
-        return decoder.decode(buffer);
-    }
     exports.StorageService = StorageService;
 
     // Originally based on the JavaScript implementation as provided by Russell Sayers on his Tin Isles blog:
@@ -139,7 +132,6 @@
         var storageService = null,
             keyUtilities = null,
             editingEnabled = false;
-
         var init = function () {
             storageService = new StorageService();
             keyUtilities = new KeyUtilities(jsSHA);
@@ -170,7 +162,7 @@
                     addAccount(name, secret);
                     clearAddFields();
                     $.mobile.navigate('#main');
-                    location.reload()
+                    
                 } else {
                     $('#keySecret').focus();
                 }
@@ -186,11 +178,26 @@
             };
 
             $('#edit').click(function () { toggleEdit(); });
-            $('#export').click(function () { exportAccounts(); });
-            $('#import').click(function () { importAccounts(); });
-            $('#cleanupButton').click(()=> cleanupAccounts())
-        };
+            $('#delete-keys-button').click(() => cleanupAccounts());
 
+            $("#import-keys-button").click( () => loadImported() );
+            const file = document.getElementById("keys_upload_input")
+            file.addEventListener('change', importAccounts, false);
+
+            $('#export-keys-button').click(()=> exportAccounts() );
+            function flipChanged(e) {
+                var id = this.id,
+                    value = this.value;
+                var enabled = value == 'on' ? true : value == 'off' ? false : null
+                window.save_encrypted = enabled;
+                if (enabled) {
+                    $('#encryption_password').attr("style", "display:inline;text-align:center;")
+                } else {
+                    $('#encryption_password').attr("style", "display:none;text-align:center;")
+                }
+            }
+            $('#encryption-slider').on("change", flipChanged)
+        };
         var updateKeys = function () {
             var accountList = $('#accounts');
             // Remove all except the first line
@@ -200,8 +207,8 @@
                 var key = keyUtilities.generate(account.secret);
 
                 // Construct HTML
-                var account_name_elem = '<span>'+account.name+'</span>'
-                if(editingEnabled) account_name_elem = '<input type="text" class="account_name_input" id="account_name_'+index+'" value="'+account.name+'" placeholder="Key Name">'
+                var account_name_elem = '<span>' + account.name + '</span>'
+                if (editingEnabled) account_name_elem = '<input type="text" class="account_name_input" id="account_name_' + index + '" value="' + account.name + '" placeholder="Key Name">'
                 var accName = $('<p>').html(account_name_elem).html();  // print as-is
                 var detLink = $('<span class="secret"><h3>' + key + '</h3>' + accName + '</span>');
                 var accElem = $('<li data-icon="false">').append(detLink);
@@ -219,7 +226,7 @@
         };
         var saveAccounts = () => {
             let accounts = storageService.getObject('accounts');
-            $(".account_name_input").each((i,elem)=>{
+            $(".account_name_input").each((i, elem) => {
                 accounts[i].name = $(elem).val()
             })
             storageService.setObject('accounts', accounts);
@@ -237,52 +244,88 @@
             }
             updateKeys();
         };
-        var exportAccounts = function () {
-            var accounts = JSON.stringify(storageService.getObject('accounts'));
-            if (confirm("Use Encryption? \n 'OK' encrypted file \n 'Cancel' plain file")) {
-            let password = prompt("Enter password to encrypt:", "");
-            if(password == "" || password == null){
-                location.reload();
-            }else{
-                var data_string = JSON.stringify(accounts)
-                var encrypted = CryptoJS.AES.encrypt(data_string,password)
-                alert(encrypted)
-            let tosavedata = {
-                "encrypted" : true,
-                "data" : encrypted.toString()
-            }
-            var blob = new Blob([JSON.stringify(tosavedata)], { type: 'text/plain;charset=utf-8' });
-            saveAs(blob, 'gauth-encrypted-data.json');
-            location.reload()
-            
+        var closeDialog = () => {
+            let url = window.location.href;
+            url = url.replaceAll('&ui-state=dialog','')
+            window.location = url
         }
+        var exportAccounts = function () {
+            console.log("saving keys")
+            var accounts = JSON.stringify(storageService.getObject('accounts'));
+            if (window.save_encrypted) {
+                let password_input = $("#encryption_password_input")
+                let password = password_input.val();
+                if (password.length < 1) return alert("Please write a password")
+                var data_string = JSON.stringify(accounts)
+                var encrypted = CryptoJS.AES.encrypt(data_string, password)
+                let tosavedata = {
+                    "encrypted": true,
+                    "data": encrypted.toString()
+                }
+                var blob = new Blob([JSON.stringify(tosavedata)], { type: 'text/plain;charset=utf-8' });
+                saveAs(blob, 'gauth-encrypted-data.json');
+                closeDialog()
             } else {
 
                 let tosavedata = JSON.stringify({
-                    encrypted : false,
-                    data : accounts
+                    encrypted: false,
+                    data: accounts
                 })
-            var blob = new Blob([tosavedata], { type: 'text/plain;charset=utf-8' });
-            saveAs(blob, 'gauth-data.json');
-            location.reload()
+                var blob = new Blob([tosavedata], { type: 'text/plain;charset=utf-8' });
+                saveAs(blob, 'gauth-data.json');
+                closeDialog()
             }
         };
-
-        var importAccounts = () => {
-            console.log("..")
-            const file = document.getElementById("import_keys_")
-            const validate = (data) => {
-                if (!Array.isArray(data)) return false;
-                if (data.length < 1) return false;
-                return data.map((entry) => {
-                    return (entry.hasOwnProperty('name') && entry.hasOwnProperty('secret'))
-                }).every(element => element === true);
+        const validate = (data) => {
+            if (!Array.isArray(data)) return false;
+            if (data.length < 1) return false;
+            return data.map((entry) => {
+                return (entry.hasOwnProperty('name') && entry.hasOwnProperty('secret'))
+            }).every(element => element === true);
+        }
+        var loadImported = () => {
+            let data = window.import_fileData;
+            const password = $("#encryption_password_upload_input").val()
+            if(data.encrypted){
+                if(password.length<1) return alert("Please enter your password")
+                try {
+                    var decrypted = CryptoJS.AES.decrypt(data.data, password);
+                    var data_ = JSON.parse(JSON.parse(decrypted.toString(CryptoJS.enc.Utf8)));
+                    if(!validate(data_)) return alert("Data is not valid")
+                    storageService.setObject('accounts', data_);
+                    updateKeys();
+                    $("#import_keys_").val("")
+                    $.mobile.navigate('#main');
+                    
+                } catch (error) {
+                    alert("Wrong Password or File")
+                    
+                }
             }
-            file.click();
-            file.addEventListener("click", function(evt) {
-                evt.stopPropagation();
-              }, false);
-            file.addEventListener('change', (event) => {
+            if(!data.encrypted){
+            if(!validate(data.data)) return alert("Data is not valid")
+            storageService.setObject('accounts', data.data);
+            updateKeys();
+            $("#import_keys_").val("")
+            $.mobile.navigate('#main');
+            }
+        }
+        var loadImportedAccount = (event) =>{
+            const fileDataRaw = event.target.result;
+            if(!hasJsonStructure(fileDataRaw)) return alert("Not gauth compatible FileType")
+            const fileData = JSON.parse(fileDataRaw)
+            if(fileData.encrypted){
+                $('#encryption_password_upload').attr("style", "display:inline;text-align:center;")
+                $("#keys_upload_message").text("Your Keys are encrypted, please entry your password")
+                window.import_fileData = fileData;
+            }
+            if(!fileData.encrypted){
+                $("#keys_upload_message").text("There are "+JSON.parse(fileData.data).length+" keys that you can load")
+                window.import_fileData = fileData;
+            }    
+        }
+        var importAccounts = (event) => {
+            const file = document.getElementById("keys_upload_input")
                 // Stop the form from reloading the page
                 event.preventDefault();
                 // If there's no file, do nothing
@@ -291,56 +334,16 @@
                 let reader = new FileReader();
                 // Setup the callback event to run when the file is read
                 reader.onload = (event) => {
-                        let str = event.target.result;
-                        if(hasJsonStructure(str)){
-                        let json = JSON.parse(str);
-                        if(json.encrypted){
-                            let password = prompt("Enter password to decrypt:", "");
-                            if(password == "" || password == null){
-                                location.reload();
-                            }else{
-                                try {
-                                var decrypted = CryptoJS.AES.decrypt(json.data, password);
-                                var data_ = JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
-                                var data__ = JSON.parse(data_)
-                                storageService.setObject('accounts', data__);
-                                updateKeys();
-                                $("#import_keys_").val("")
-                                $.mobile.navigate('#main');
-                                location.reload()
-                            } catch(error){
-                                alert("Wrong Password or File")
-                                location.reload()
-                            }
-                                
-                            }
-                        }else{
-                        if (validate(json)) {
-                            storageService.setObject('accounts', json);
-                            updateKeys();
-                            $("#import_keys_").val("")
-                            $.mobile.navigate('#main');
-                            location.reload()
-                        } else {
-                            alert("Not gauth compatible FileStructure")
-                            location.reload()
-                        }
-                    }
-                    }else{
-                        alert("Not gauth compatible FileType")
-                        location.reload()
-                    }
+                    loadImportedAccount(event);
                 }
                 // Read the file
                 reader.readAsText(file.files[0]);
-
-            }, false);
         }
         var cleanupAccounts = () => {
             storageService.setObject('accounts', []);
             updateKeys();
             $.mobile.navigate('#main');
-            location.reload()
+            
         }
         var deleteAccount = function (index) {
             // Remove object by index
@@ -349,7 +352,6 @@
             storageService.setObject('accounts', accounts);
             updateKeys();
         };
-
         var addAccount = function (name, secret) {
             if (secret === '') {
                 // Bailout
@@ -376,7 +378,6 @@
 
             return true;
         };
-
         var timerTick = function () {
             var epoch = Math.round(new Date().getTime() / 1000.0);
             var countDown = 30 - (epoch % 30);
@@ -385,7 +386,6 @@
             }
             $('#updatingIn').text(countDown);
         };
-
         return {
             init: init,
             addAccount: addAccount,
