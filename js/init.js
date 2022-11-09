@@ -6,5 +6,7 @@ $(document).bind('mobileinit', function(){
 
 $(function() {
     // Initialize external panels
+    window.save_encrypted = false;
+    window.load_keys_encrypted = false;
     $("body>[data-role='panel']").panel().enhanceWithin();
 });
