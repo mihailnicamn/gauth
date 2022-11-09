@@ -10,6 +10,7 @@
         var getObject = (key) => {
             var value = localStorage.getItem(key);
             // if(value) return parsed JSON else undefined
+            alert(value)
             return value && JSON.parse(value);
         };
         var isSupported = () => {
@@ -170,10 +171,6 @@
 
             // if accounts is null or not an array, set it to an empty array
             if (!storageService.isSupported()) {
-                storageService.setObject('accounts', {
-                    data: [],
-                    encryped: false
-                });
                 alert('Your browser does not support local storage. Please use a modern browser.');
                 return;
             }
