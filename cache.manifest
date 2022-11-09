@@ -9,12 +9,10 @@ css/styling.css
 img/flattr-badge-large.png
 index.html
 js/init.js
+js/crypto-js.js
 js/gauth.js
 js/main.js
 lib/jquery-2.1.3.min.js
 lib/jquery.mobile-1.4.5.min.js
 lib/jssha-1.31.min.js
 lib/FileSaver.js
-
-NETWORK:
-*
