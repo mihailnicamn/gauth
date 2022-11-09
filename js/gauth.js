@@ -305,6 +305,7 @@
             try {
                 var local_data = storageService.getObject('accounts');
                 if (local_data.encrypted) {
+                    //verify if password is correct
                     var local_decrypted_data = CryptoService().decrypt(local_data.data, CryptoService().getWindowPassword())
                     if (local_decrypted_data) {
                         return local_decrypted_data
@@ -520,17 +521,36 @@
             closeDialog();
             updateKeys();
         }
+        var verifyPassword_ = (password) => {
+            let accounts = storageService.getObject('accounts')
+            try{
+                var decrypted_data = CryptoService().decrypt(accounts.data, password)
+                return true
+            }
+            catch(e){
+                alert("Wrong password")
+                return false
+            }
+        }
         var verifyPassword_logic = () => {
             if(storageService.getObject('accounts').encrypted && CryptoService().isPasswordSet()){
+                if(verifyPassword_(CryptoService().isPasswordSet())){
                 decryptBrowser($("#encryption_password_unlock_input").val())
                 $("#encryption_password_unlock_input").val("")
+                }else{
+                $("#encryption_password_unlock_input").val("")
+                }
             }else
 
             if(storageService.getObject('accounts').encrypted && !CryptoService().isPasswordSet()){
+                if(verifyPassword_($("#encryption_password_unlock_input").val())){
                 CryptoService().setWindowPassword($("#encryption_password_unlock_input").val())
                 $("#encryption_password_unlock_input").val("")
                 updateKeys();
                 closeDialog();
+                }else{
+                $("#encryption_password_unlock_input").val("")
+                }
             }else
 
             if(!storageService.getObject('accounts').encrypted){
