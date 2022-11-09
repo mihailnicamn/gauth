@@ -382,7 +382,7 @@
             var epoch = Math.round(new Date().getTime() / 1000.0);
             var countDown = 30 - (epoch % 30);
             if (epoch % 30 === 0) {
-                updateKeys();
+                if(!editingEnabled) updateKeys();
             }
             $('#updatingIn').text(countDown);
         };
