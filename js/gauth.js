@@ -173,7 +173,7 @@
                 alert('Your browser does not support local storage. Please use a modern browser.');
                 return;
             }
-            if (!storageService.hasJsonStructure(localStorage.getItem('accounts'))|| storageService.getObject('accounts') == null) {
+            if (!storageService.hasJsonStructure(localStorage.getItem('accounts'))|| storageService.getObject('accounts') == null || storageService.getObject('accounts') == undefined) {
                 storageService.setObject('accounts', {
                     data: [],
                     encryped: false
