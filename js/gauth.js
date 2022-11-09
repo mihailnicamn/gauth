@@ -422,6 +422,7 @@
             let fileData = window.import_fileData;
             const password = $("#encryption_password_upload_input").val()
             if (fileData.encrypted) {
+                if(!verifyPassword__(fileData.data,password)) return alert("Wrong password")
                 var decryptedFileData = JSON.parse(CryptoService().decrypt(fileData.data, password))
                 if (decryptedFileData) {
                     if (!storageService.validate(decryptedFileData)) return alert("Invalid data")
@@ -433,6 +434,7 @@
                 } else {
                     alert("Wrong password or corrupted file")
                 }
+            
             }
             if (!fileData.encrypted) {
                 var parsedData = JSON.parse(fileData.data)
@@ -529,6 +531,15 @@
             }
             catch(e){
                 alert("Wrong password")
+                return false
+            }
+        }
+        var verifyPassword__ = (data,password) => {
+            try{
+                var decrypted_data = CryptoService().decrypt(data, password)
+                return true
+            }
+            catch(e){
                 return false
             }
         }
