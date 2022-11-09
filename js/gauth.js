@@ -10,7 +10,6 @@
         var getObject = (key) => {
             var value = localStorage.getItem(key);
             // if(value) return parsed JSON else undefined
-            alert(value)
             return value && JSON.parse(value);
         };
         var isSupported = () => {
