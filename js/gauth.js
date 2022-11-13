@@ -164,6 +164,15 @@
         var storageService = null,
             keyUtilities = null,
             editingEnabled = false;
+
+        var fixURL = () => {
+            let url = window.location.href;
+            if(url.includes("#")){
+            url = url.split('#')[0]
+            window.location = url
+        }
+        }
+        fixURL()
         var init = () => {
             storageService = new StorageService();
             keyUtilities = new KeyUtilities(jsSHA);
@@ -562,7 +571,7 @@
         }
         var verifyPassword_logic = () => {
             if(storageService.getObject('accounts').encrypted && CryptoService().isPasswordSet()){
-                if(verifyPassword_(CryptoService().isPasswordSet())){
+                if(verifyPassword_($("#encryption_password_unlock_input").val())){
                 decryptBrowser($("#encryption_password_unlock_input").val())
                 $("#encryption_password_unlock_input").val("")
                 }else{
