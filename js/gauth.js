@@ -421,7 +421,8 @@
         var loadImported = () => {
             let fileData = window.import_fileData;
             const password = $("#encryption_password_upload_input").val()
-            if (fileData.encrypted) {
+            if (fileData.hasOwnProperty("encrypted")) {
+                if(fileData.encrypted){
                 if(!verifyPassword__(fileData.data,password)) return alert("Wrong password")
                 var decryptedFileData = JSON.parse(CryptoService().decrypt(fileData.data, password))
                 if (decryptedFileData) {
@@ -434,10 +435,20 @@
                 } else {
                     alert("Wrong password or corrupted file")
                 }
-            
             }
             if (!fileData.encrypted) {
                 var parsedData = JSON.parse(fileData.data)
+                if (!storageService.validate(parsedData)) return alert("Invalid data")
+                setSafeData(parsedData)
+                closeDialog();
+                updateKeys();
+                $("#import_keys_").val("");
+                $.mobile.navigate('#main');
+            }
+            
+            }
+            if (!fileData.hasOwnProperty("encrypted")) {
+                var parsedData = fileData
                 if (!storageService.validate(parsedData)) return alert("Invalid data")
                 setSafeData(parsedData)
                 closeDialog();
@@ -450,6 +461,7 @@
             const fileDataRaw = event.target.result;
             if (!storageService.hasJsonStructure(fileDataRaw)) return alert("Invalid data")
             const fileData = JSON.parse(fileDataRaw)
+            if(fileData.hasOwnProperty("encrypted")){
             if (fileData.encrypted) {
                 $('#encryption_password_upload').attr("style", "display:inline;text-align:center;")
                 $("#keys_upload_message").text("Your Keys are encrypted, please entry your password")
@@ -459,6 +471,11 @@
                 $("#keys_upload_message").text("There are " + JSON.parse(fileData.data).length + " keys that you can load")
                 window.import_fileData = fileData;
             }
+        }
+        if (!fileData.hasOwnProperty("encrypted")) {
+            $("#keys_upload_message").text("There are " + fileData.length + " keys that you can load")
+            window.import_fileData = fileData;
+        }
         }
         var importAccounts = (event) => {
             const file = document.getElementById("keys_upload_input")
