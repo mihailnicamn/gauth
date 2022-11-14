@@ -1,5 +1,7 @@
 
 ((exports) => {
+    var isSafari = () => {return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);}
+    var safari_err_msg = " Known issue on Safari\n Cannot ask for password on page load\n Open the menu and click on 'Your data is encrypted'"
     "use strict";
     //==========
     //DATA STORAGE
@@ -197,7 +199,12 @@
                 }else{
                     if(storageService.getObject('accounts').encrypted){
                     verifyPassword_ui();
+                    if(!isSafari()){
                     $('[aria-owns="unlock-keys"]').click()
+                    }else{
+                        alert(safari_err_msg)
+                    }
+                    setInterval(timerTick, 1000);
                     }else{
                         updateKeys();
                         setInterval(timerTick, 1000);
