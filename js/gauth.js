@@ -260,7 +260,9 @@
                 }
             }
             $('#encryption-slider').on("change", flipChanged)
-
+            $("#reload").click(() => {
+                updateKeys();
+            });
             $("#unlock-keys-button").click(() => {
                 verifyPassword_logic()});
         };
@@ -374,6 +376,9 @@
             window.location.reload()
         }
         var addAccount = function (name, secret) {
+            if(storageService.getObject('accounts').encrypted && !CryptoService().getWindowPassword()){
+                return alert("You need to unlock your keys first") //from safari issue
+            }
             if (secret === '') {
                 // Bailout
                 return false;
@@ -435,6 +440,9 @@
         };
         //-----------------import suite-----------------
         var loadImported = () => {
+            if(storageService.getObject('accounts').encrypted && !CryptoService().getWindowPassword()){
+                return alert("You need to unlock your keys first") //from safari issue
+            }
             let fileData = window.import_fileData;
             const password = $("#encryption_password_upload_input").val()
             if (fileData.hasOwnProperty("encrypted")) {
