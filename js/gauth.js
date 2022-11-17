@@ -195,6 +195,10 @@
                 if(CryptoService().isPasswordSet()){
                     alert(CryptoService().isPasswordSet())
                 updateKeys();
+
+            if(getSafeData().length == 0){
+                toggleEdit();
+            }
                 setInterval(timerTick, 1000);
                 }else{
                     if(storageService.getObject('accounts').encrypted){
@@ -207,6 +211,10 @@
                     setInterval(timerTick, 1000);
                     }else{
                         updateKeys();
+
+            if(getSafeData().length == 0){
+                toggleEdit();
+            }
                         setInterval(timerTick, 1000);
                     }
                 }
@@ -275,8 +283,10 @@
             verifyPassword_ui();
             var accountList = $('#accounts');
             // Remove all except the first line
+            const accounts = getSafeData()
+
             accountList.find("li:gt(0)").remove();
-            $.each(getSafeData(), function (index, account) {
+            $.each(accounts, function (index, account) {
                 var key = keyUtilities.generate(account.secret);
 
                 // Construct HTML
@@ -296,6 +306,7 @@
                 accountList.append(accElem);
             });
             accountList.listview().listview('refresh');
+
 
         };
         var toggleEdit = () => {
