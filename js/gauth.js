@@ -1,6 +1,6 @@
 
 ((exports) => {
-    var isSafari = () => {return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);}
+    var isSafari = () => { return /^((?!chrome|android).)*safari/i.test(navigator.userAgent); }
     var safari_err_msg = " Known issue on Safari\n Cannot ask for password on page load\n Open the menu and click on 'Your data is encrypted'"
     "use strict";
     //==========
@@ -75,7 +75,7 @@
             window.isitsafu = isit
         }
         var isBrowserSafu = () => {
-            if(window.isitsafu === undefined) return false
+            if (window.isitsafu === undefined) return false
             return window.isitsafu
         }
         return {
@@ -169,10 +169,10 @@
 
         var fixURL = () => {
             let url = window.location.href;
-            if(url.includes("#")){
-            url = url.split('#')[0]
-            window.location = url
-        }
+            if (url.includes("#")) {
+                url = url.split('#')[0]
+                window.location = url
+            }
         }
         fixURL()
         var init = () => {
@@ -184,7 +184,7 @@
                 alert('Your browser does not support local storage. Please use a modern browser.');
                 return;
             }
-            if (!storageService.hasJsonStructure(localStorage.getItem('accounts'))|| storageService.getObject('accounts') == null) {
+            if (!storageService.hasJsonStructure(localStorage.getItem('accounts')) || storageService.getObject('accounts') == null) {
                 storageService.setObject('accounts', {
                     data: [],
                     encryped: false
@@ -192,29 +192,29 @@
             }
             // Check if local storage is supported
             if (storageService.isSupported()) {
-                if(CryptoService().isPasswordSet()){
+                if (CryptoService().isPasswordSet()) {
                     alert(CryptoService().isPasswordSet())
-                updateKeys();
+                    updateKeys();
 
-            if(getSafeData().length == 0){
-                toggleEdit();
-            }
-                setInterval(timerTick, 1000);
-                }else{
-                    if(storageService.getObject('accounts').encrypted){
-                    verifyPassword_ui();
-                    if(!isSafari()){
-                    $('[aria-owns="unlock-keys"]').click()
-                    }else{
-                        alert(safari_err_msg)
+                    if (getSafeData().length == 0) {
+                        toggleEdit();
                     }
                     setInterval(timerTick, 1000);
-                    }else{
+                } else {
+                    if (storageService.getObject('accounts').encrypted) {
+                        verifyPassword_ui();
+                        if (!isSafari()) {
+                            $('[aria-owns="unlock-keys"]').click()
+                        } else {
+                            alert(safari_err_msg)
+                        }
+                        setInterval(timerTick, 1000);
+                    } else {
                         updateKeys();
 
-            if(getSafeData().length == 0){
-                toggleEdit();
-            }
+                        if (getSafeData().length == 0) {
+                            toggleEdit();
+                        }
                         setInterval(timerTick, 1000);
                     }
                 }
@@ -272,7 +272,8 @@
                 updateKeys();
             });
             $("#unlock-keys-button").click(() => {
-                verifyPassword_logic()});
+                verifyPassword_logic()
+            });
         };
         var closeDialog = () => {
             let url = window.location.href;
@@ -387,7 +388,7 @@
             window.location.reload()
         }
         var addAccount = function (name, secret) {
-            if(storageService.getObject('accounts').encrypted && !CryptoService().getWindowPassword()){
+            if (storageService.getObject('accounts').encrypted && !CryptoService().getWindowPassword()) {
                 return alert("You need to unlock your keys first") //from safari issue
             }
             if (secret === '') {
@@ -451,36 +452,36 @@
         };
         //-----------------import suite-----------------
         var loadImported = () => {
-            if(storageService.getObject('accounts').encrypted && !CryptoService().getWindowPassword()){
+            if (storageService.getObject('accounts').encrypted && !CryptoService().getWindowPassword()) {
                 return alert("You need to unlock your keys first") //from safari issue
             }
             let fileData = window.import_fileData;
             const password = $("#encryption_password_upload_input").val()
             if (fileData.hasOwnProperty("encrypted")) {
-                if(fileData.encrypted){
-                if(!verifyPassword__(fileData.data,password)) return alert("Wrong password")
-                var decryptedFileData = JSON.parse(CryptoService().decrypt(fileData.data, password))
-                if (decryptedFileData) {
-                    if (!storageService.validate(decryptedFileData)) return alert("Invalid data")
-                    setSafeData(decryptedFileData)
+                if (fileData.encrypted) {
+                    if (!verifyPassword__(fileData.data, password)) return alert("Wrong password")
+                    var decryptedFileData = JSON.parse(CryptoService().decrypt(fileData.data, password))
+                    if (decryptedFileData) {
+                        if (!storageService.validate(decryptedFileData)) return alert("Invalid data")
+                        setSafeData(decryptedFileData)
+                        closeDialog();
+                        updateKeys();
+                        $("#import_keys_").val("");
+                        $.mobile.navigate('#main');
+                    } else {
+                        alert("Wrong password or corrupted file")
+                    }
+                }
+                if (!fileData.encrypted) {
+                    var parsedData = JSON.parse(fileData.data)
+                    if (!storageService.validate(parsedData)) return alert("Invalid data")
+                    setSafeData(parsedData)
                     closeDialog();
                     updateKeys();
                     $("#import_keys_").val("");
                     $.mobile.navigate('#main');
-                } else {
-                    alert("Wrong password or corrupted file")
                 }
-            }
-            if (!fileData.encrypted) {
-                var parsedData = JSON.parse(fileData.data)
-                if (!storageService.validate(parsedData)) return alert("Invalid data")
-                setSafeData(parsedData)
-                closeDialog();
-                updateKeys();
-                $("#import_keys_").val("");
-                $.mobile.navigate('#main');
-            }
-            
+
             }
             if (!fileData.hasOwnProperty("encrypted")) {
                 var parsedData = fileData
@@ -496,21 +497,21 @@
             const fileDataRaw = event.target.result;
             if (!storageService.hasJsonStructure(fileDataRaw)) return alert("Invalid data")
             const fileData = JSON.parse(fileDataRaw)
-            if(fileData.hasOwnProperty("encrypted")){
-            if (fileData.encrypted) {
-                $('#encryption_password_upload').attr("style", "display:inline;text-align:center;")
-                $("#keys_upload_message").text("Your Keys are encrypted, please entry your password")
+            if (fileData.hasOwnProperty("encrypted")) {
+                if (fileData.encrypted) {
+                    $('#encryption_password_upload').attr("style", "display:inline;text-align:center;")
+                    $("#keys_upload_message").text("Your Keys are encrypted, please entry your password")
+                    window.import_fileData = fileData;
+                }
+                if (!fileData.encrypted) {
+                    $("#keys_upload_message").text("There are " + JSON.parse(fileData.data).length + " keys that you can load")
+                    window.import_fileData = fileData;
+                }
+            }
+            if (!fileData.hasOwnProperty("encrypted")) {
+                $("#keys_upload_message").text("There are " + fileData.length + " keys that you can load")
                 window.import_fileData = fileData;
             }
-            if (!fileData.encrypted) {
-                $("#keys_upload_message").text("There are " + JSON.parse(fileData.data).length + " keys that you can load")
-                window.import_fileData = fileData;
-            }
-        }
-        if (!fileData.hasOwnProperty("encrypted")) {
-            $("#keys_upload_message").text("There are " + fileData.length + " keys that you can load")
-            window.import_fileData = fileData;
-        }
         }
         var importAccounts = (event) => {
             const file = document.getElementById("keys_upload_input")
@@ -547,9 +548,9 @@
             var accounts = storageService.getObject('accounts')
             if (!accounts.encrypted) {
             }
-            try{
+            try {
                 var decrypted_data = CryptoService().decrypt(accounts.data, password)
-            }catch(e){
+            } catch (e) {
                 alert("Wrong password")
                 return
             }
@@ -577,68 +578,68 @@
         }
         var verifyPassword_ = (password) => {
             let accounts = storageService.getObject('accounts')
-            try{
+            try {
                 var decrypted_data = CryptoService().decrypt(accounts.data, password)
                 return true
             }
-            catch(e){
+            catch (e) {
                 alert("Wrong password")
                 return false
             }
         }
-        var verifyPassword__ = (data,password) => {
-            try{
+        var verifyPassword__ = (data, password) => {
+            try {
                 var decrypted_data = CryptoService().decrypt(data, password)
                 return true
             }
-            catch(e){
+            catch (e) {
                 return false
             }
         }
         var verifyPassword_logic = () => {
-            if(storageService.getObject('accounts').encrypted && CryptoService().isPasswordSet()){
-                if(verifyPassword_($("#encryption_password_unlock_input").val())){
-                decryptBrowser($("#encryption_password_unlock_input").val())
-                $("#encryption_password_unlock_input").val("")
-                }else{
-                $("#encryption_password_unlock_input").val("")
+            if (storageService.getObject('accounts').encrypted && CryptoService().isPasswordSet()) {
+                if (verifyPassword_($("#encryption_password_unlock_input").val())) {
+                    decryptBrowser($("#encryption_password_unlock_input").val())
+                    $("#encryption_password_unlock_input").val("")
+                } else {
+                    $("#encryption_password_unlock_input").val("")
                 }
-            }else
+            } else
 
-            if(storageService.getObject('accounts').encrypted && !CryptoService().isPasswordSet()){
-                if(verifyPassword_($("#encryption_password_unlock_input").val())){
-                CryptoService().setWindowPassword($("#encryption_password_unlock_input").val())
-                $("#encryption_password_unlock_input").val("")
-                updateKeys();
-                closeDialog();
-                }else{
-                $("#encryption_password_unlock_input").val("")
-                }
-            }else
+                if (storageService.getObject('accounts').encrypted && !CryptoService().isPasswordSet()) {
+                    if (verifyPassword_($("#encryption_password_unlock_input").val())) {
+                        CryptoService().setWindowPassword($("#encryption_password_unlock_input").val())
+                        $("#encryption_password_unlock_input").val("")
+                        updateKeys();
+                        closeDialog();
+                    } else {
+                        $("#encryption_password_unlock_input").val("")
+                    }
+                } else
 
-            if(!storageService.getObject('accounts').encrypted){
-                CryptoService().setWindowPassword($("#encryption_password_unlock_input").val())
-                $("#encryption_password_unlock_input").val("")
-                encryptBrowser()
-            }else{}
+                    if (!storageService.getObject('accounts').encrypted) {
+                        CryptoService().setWindowPassword($("#encryption_password_unlock_input").val())
+                        $("#encryption_password_unlock_input").val("")
+                        encryptBrowser()
+                    } else { }
         }
         var verifyPassword_ui = () => {
 
-            if(storageService.getObject('accounts').encrypted && CryptoService().isPasswordSet()){
+            if (storageService.getObject('accounts').encrypted && CryptoService().isPasswordSet()) {
                 CryptoService().setBroserSafu(true)
                 $('[aria-owns="unlock-keys"]').text("Disable Browser Encryption")
                 $("#unlock-keys-title").text("Browser level encryption is enabled")
                 $("#unlock-keys-subtitle").text("Please enter your password to disable encryption")
                 $("#unlock-keys-button").text("Disable Browser Encryption")
-                
+
             }
-            if(storageService.getObject('accounts').encrypted && !CryptoService().isPasswordSet()){
+            if (storageService.getObject('accounts').encrypted && !CryptoService().isPasswordSet()) {
                 $('[aria-owns="unlock-keys"]').text("Your data is encrypted")
                 $("#unlock-keys-title").text("Browser level encryption is enabled")
                 $("#unlock-keys-subtitle").text("Please enter your password to access your data")
                 $("#unlock-keys-button").text("Access Encrypted Data")
             }
-            if(!storageService.getObject('accounts').encrypted){
+            if (!storageService.getObject('accounts').encrypted) {
                 CryptoService().setBroserSafu(false)
                 $('[aria-owns="unlock-keys"]').text("Enable Browser Encryption")
                 $("#unlock-keys-title").text("Browser level encryption is disabled")
